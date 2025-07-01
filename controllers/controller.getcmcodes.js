@@ -1,23 +1,16 @@
-const pool = require('../config/db.config');
+const { getAllCMCodes, getCMCodeByCode } = require('../models/model.getCMCodes');
 
 /**
  * Controller to get unique CM codes from the database
  */
 async function getCMCodesController(request, reply) {
   try {
-    // Query to get unique CM codes
-    const query = `
-      SELECT DISTINCT cm_code, cm_description 
-      FROM public.sdp_cm 
-      ORDER BY cm_code;
-    `;
-    
-    const result = await pool.query(query);
+    const cmCodes = await getAllCMCodes();
     
     reply.code(200).send({ 
       success: true, 
-      count: result.rows.length,
-      data: result.rows 
+      count: cmCodes.length,
+      data: cmCodes 
     });
   } catch (error) {
     request.log.error(error);
@@ -36,15 +29,9 @@ async function getCMCodeByCodeController(request, reply) {
   try {
     const { cm_code } = request.params;
     
-    const query = `
-      SELECT id, cm_code, cm_description, created_at, updated_at
-      FROM public.sdp_cm 
-      WHERE cm_code = $1;
-    `;
+    const cmCodeData = await getCMCodeByCode(cm_code);
     
-    const result = await pool.query(query, [cm_code]);
-    
-    if (result.rows.length === 0) {
+    if (!cmCodeData) {
       return reply.code(404).send({ 
         success: false, 
         message: 'CM code not found' 
@@ -53,7 +40,7 @@ async function getCMCodeByCodeController(request, reply) {
     
     reply.code(200).send({ 
       success: true, 
-      data: result.rows[0] 
+      data: cmCodeData 
     });
   } catch (error) {
     request.log.error(error);
